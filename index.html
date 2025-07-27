@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Status Page</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide React Icons CDN (requires React) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide-react@0.395.0/dist/umd/lucide-react.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { CheckCircle, AlertTriangle, XCircle, Settings } = lucideReact;
+
+        // Main App component (copy the App component code from above here)
+        const App = () => {
+          // Define initial services or load from localStorage
+          const initialServices = [
+            { id: 'website', name: 'Main Website', status: 'operational', message: 'All systems operational.' },
+            { id: 'api', name: 'API Services', status: 'operational', message: 'All systems operational.' },
+            { id: 'database', name: 'Database', status: 'operational', message: 'All systems operational.' },
+            { id: 'cdn', name: 'CDN', status: 'operational', message: 'All systems operational.' },
+          ];
+
+          const [services, setServices] = useState(() => {
+            const savedServices = localStorage.getItem('statusPageServices');
+            return savedServices ? JSON.parse(savedServices) : initialServices;
+          });
+
+          const [lastUpdated, setLastUpdated] = useState(() => {
+            const savedTimestamp = localStorage.getItem('statusPageLastUpdated');
+            return savedTimestamp || new Date().toLocaleString();
+          });
+
+          const [isModalOpen, setIsModalOpen] = useState(false);
+          const [editingServices, setEditingServices] = useState([]);
+
+          // Load services and timestamp from localStorage on initial render
+          useEffect(() => {
+            const savedServices = localStorage.getItem('statusPageServices');
+            const savedTimestamp = localStorage.getItem('statusPageLastUpdated');
+            if (savedServices) {
+              setServices(JSON.parse(savedServices));
+            }
+            if (savedTimestamp) {
+              setLastUpdated(savedTimestamp);
+            }
+          }, []);
+
+          // Save services and timestamp to localStorage whenever services state changes
+          useEffect(() => {
+            localStorage.setItem('statusPageServices', JSON.stringify(services));
+            localStorage.setItem('statusPageLastUpdated', lastUpdated);
+          }, [services, lastUpdated]);
+
+          // Determine overall status
+          const getOverallStatus = () => {
+            if (services.some(service => service.status === 'major_outage')) {
+              return { text: 'Major Outage', color: 'bg-red-500' };
+            }
+            if (services.some(service => service.status === 'partial_outage')) {
+              return { text: 'Partial Outage', color: 'bg-orange-500' };
+            }
+            if (services.some(service => service.status === 'degraded')) {
+              return { text: 'Degraded Performance', color: 'bg-yellow-500' };
+            }
+            return { text: 'All Systems Operational', color: 'bg-green-500' };
+          };
+
+          const overallStatus = getOverallStatus();
+
+          // Function to open the configuration modal
+          const openModal = () => {
+            setEditingServices([...services]); // Create a copy for editing
+            setIsModalOpen(true);
+          };
+
+          // Function to close the configuration modal
+          const closeModal = () => {
+            setIsModalOpen(false);
+          };
+
+          // Handle changes in the modal's input fields
+          const handleModalInputChange = (id, field, value) => {
+            setEditingServices(prevServices =>
+              prevServices.map(service =>
+                service.id === id ? { ...service, [field]: value } : service
+              )
+            );
+          };
+
+          // Save changes from the modal
+          const handleSaveConfig = () => {
+            setServices(editingServices);
+            setLastUpdated(new Date().toLocaleString());
+            closeModal();
+          };
+
+          // Get status icon and color based on status string
+          const getStatusIcon = (status) => {
+            switch (status) {
+              case 'operational':
+                return <CheckCircle className="text-green-500" />;
+              case 'degraded':
+                return <AlertTriangle className="text-yellow-500" />;
+              case 'partial_outage':
+                return <XCircle className="text-orange-500" />;
+              case 'major_outage':
+                return <XCircle className="text-red-500" />;
+              default:
+                return <CheckCircle className="text-gray-500" />;
+            }
+          };
+
+          const getStatusColorClass = (status) => {
+            switch (status) {
+              case 'operational':
+                return 'text-green-600';
+              case 'degraded':
+                return 'text-yellow-600';
+              case 'partial_outage':
+                return 'text-orange-600';
+              case 'major_outage':
+                return 'text-red-600';
+              default:
+                return 'text-gray-600';
+            }
+          };
+
+          return (
+            <div className="min-h-screen bg-gray-100 font-inter antialiased flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8">
+              {/* Header */}
+              <header className="w-full max-w-4xl bg-white shadow-lg rounded-xl p-6 mb-8 text-center">
+                <h1 className="text-4xl font-extrabold text-gray-900 mb-2">
+                  System Status
+                </h1>
+                <p className="text-gray-600 text-lg">
+                  Real-time updates on our services.
+                </p>
+              </header>
+
+              {/* Overall Status Indicator */}
+              <div className={`w-full max-w-4xl ${overallStatus.color} text-white py-4 px-6 rounded-xl shadow-md mb-8 text-center`}>
+                <h2 className="text-2xl font-bold">{overallStatus.text}</h2>
+              </div>
+
+              {/* Services List */}
+              <main className="w-full max-w-4xl bg-white shadow-lg rounded-xl p-6 mb-8">
+                <h3 className="text-2xl font-semibold text-gray-800 mb-6 border-b pb-4">
+                  Service Components
+                </h3>
+                <div className="space-y-6">
+                  {services.map(service => (
+                    <div key={service.id} className="flex items-start p-4 rounded-lg bg-gray-50 border border-gray-200">
+                      <div className="flex-shrink-0 mt-1 mr-4">
+                        {getStatusIcon(service.status)}
+                      </div>
+                      <div className="flex-grow">
+                        <h4 className="text-xl font-semibold text-gray-900 mb-1">{service.name}</h4>
+                        <p className={`text-lg font-medium ${getStatusColorClass(service.status)} mb-2`}>
+                          {service.status.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}
+                        </p>
+                        <p className="text-gray-700 text-base">{service.message}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </main>
+
+              {/* Footer and Configuration */}
+              <footer className="w-full max-w-4xl flex flex-col sm:flex-row justify-between items-center bg-white shadow-lg rounded-xl p-6">
+                <p className="text-gray-500 text-sm mb-4 sm:mb-0">
+                  Last Updated: {lastUpdated}
+                </p>
+                <button
+                  onClick={openModal}
+                  className="flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-300 ease-in-out"
+                >
+                  <Settings className="w-5 h-5 mr-2" />
+                  Configure Status
+                </button>
+              </footer>
+
+              {/* Disclaimer */}
+              <div className="w-full max-w-4xl text-center mt-8 p-4 bg-yellow-100 text-yellow-800 rounded-lg shadow-md">
+                <p className="font-medium">
+                  Important: This is a <span className="font-bold">manual status page</span>. It does not automatically detect service outages. Please update statuses using the "Configure Status" button.
+                </p>
+              </div>
+
+              {/* Configuration Modal */}
+              {isModalOpen && (
+                <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+                  <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <h3 className="text-3xl font-bold text-gray-900 mb-6 border-b pb-4">
+                      Configure Service Statuses
+                    </h3>
+                    <div className="space-y-6">
+                      {editingServices.map(service => (
+                        <div key={service.id} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                          <h4 className="text-xl font-semibold text-gray-800 mb-3">{service.name}</h4>
+                          <div className="mb-3">
+                            <label htmlFor={`status-${service.id}`} className="block text-sm font-medium text-gray-700 mb-1">
+                              Status:
+                            </label>
+                            <select
+                              id={`status-${service.id}`}
+                              value={service.status}
+                              onChange={(e) => handleModalInputChange(service.id, 'status', e.target.value)}
+                              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm"
+                            >
+                              <option value="operational">Operational</option>
+                              <option value="degraded">Degraded Performance</option>
+                              <option value="partial_outage">Partial Outage</option>
+                              <option value="major_outage">Major Outage</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label htmlFor={`message-${service.id}`} className="block text-sm font-medium text-gray-700 mb-1">
+                              Message:
+                            </label>
+                            <textarea
+                              id={`message-${service.id}`}
+                              value={service.message}
+                              onChange={(e) => handleModalInputChange(service.id, 'message', e.target.value)}
+                              rows="3"
+                              className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              placeholder="e.g., 404 error, This site can't be reached, Investigating issue..."
+                            ></textarea>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-8 flex justify-end space-x-4">
+                      <button
+                        onClick={closeModal}
+                        className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 transition duration-300 ease-in-out"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSaveConfig}
+                        className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 transition duration-300 ease-in-out"
+                      >
+                        Save Changes
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
