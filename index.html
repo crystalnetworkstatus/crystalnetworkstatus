@@ -17,6 +17,7 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
     <!-- Explicitly make React and ReactDOM available on the window object for other libraries -->
+    <!-- This script runs immediately after React and ReactDOM are loaded -->
     <script>
         window.React = React;
         window.ReactDOM = ReactDOM;
@@ -39,11 +40,13 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // Destructure React hooks from the global `React` object
+        // Destructure React hooks from the global `React` object.
+        // This must happen after `window.React = React;` is executed.
         const { useState, useEffect, useCallback } = React;
 
         // Destructure lucideReact components from the global `window.lucideReact` object.
-        // Use a fallback `{}` in case `window.lucideReact` is temporarily undefined.
+        // Use a fallback `{}` in case `window.lucideReact` is temporarily undefined,
+        // though with the new load order, it should be available.
         const { CheckCircle, AlertTriangle, XCircle, RefreshCw } = window.lucideReact || {};
 
         // Main App component
@@ -160,6 +163,7 @@
           // Get status icon and color based on status string
           const getStatusIcon = (status) => {
             // Check if Lucide icons are available before rendering
+            // This check is now more robust given the improved loading order
             if (!CheckCircle || !AlertTriangle || !XCircle || !RefreshCw) {
                 console.warn("Lucide icons not fully loaded or available. Using fallback.");
                 return <span className="text-gray-500">?</span>; // Fallback if icons aren't ready
