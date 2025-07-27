@@ -286,25 +286,6 @@
                     </button>
                 </div>
               </footer>
-
-              {/* Prominent Disclaimer for Mixed Content */}
-              <div className="w-full max-w-4xl text-center mt-8 p-4 bg-red-100 text-red-800 rounded-lg shadow-md border border-red-300">
-                <p className="font-bold text-lg mb-2">
-                  Important: Connectivity Limitations
-                </p>
-                <p className="text-base">
-                  This status page is hosted on a secure (HTTPS) domain (like GitHub Pages).
-                  It is attempting to check the status of <span className="font-bold">{TARGET_URL}</span>, which is an insecure (HTTP) domain.
-                </p>
-                <p className="text-base mt-2">
-                  Modern web browsers block HTTPS pages from making direct requests to HTTP resources ("Mixed Content" security policy).
-                  Therefore, this page <span className="font-bold">cannot reliably determine the exact status (like 404, 500)</span> of the target website.
-                  It can only report if a connection attempt was blocked by the browser or if a fundamental network error occurred.
-                </p>
-                <p className="text-base mt-2 font-semibold">
-                  To get accurate status, <span className="underline">the target website itself needs to support HTTPS</span>, or a server-side proxy is required.
-                </p>
-              </div>
             </div>
           );
         };
