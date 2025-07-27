@@ -1,2 +1,2 @@
 ## Welcome -
-This is the http://crystaltierlist.kozow.com/ status page!
+This is the [CrystalNetwork](https://crystalnetwork.qzz.io/) status page!
