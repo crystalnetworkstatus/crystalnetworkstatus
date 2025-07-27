@@ -43,25 +43,17 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // Destructure React hooks from the global `React` object.
         const { useState, useEffect, useCallback } = React;
 
-        // Main App component
         const App = () => {
-          // Target URL for the status check.
-          // IMPORTANT: If your status page is hosted on HTTPS (like GitHub Pages),
-          // and the TARGET_URL is HTTP, the browser WILL BLOCK THE REQUEST
-          // due to "Mixed Content" security policy. This will result in a "Failed to fetch" error.
-          // The only way around this is for TARGET_URL to also be HTTPS, or to use a server-side proxy.
-          const TARGET_URL = 'http://crystaltierlist.kozow.com/';
+          const TARGET_URL = 'https://crystalnetwork.qzz.io/';
           const SERVICE_ID = 'crystaltierlist-website';
           const SERVICE_NAME = 'Crystal Tierlist Website';
 
-          // Define initial service state
           const initialService = {
             id: SERVICE_ID,
             name: SERVICE_NAME,
-            status: 'checking', // Initial status while checking
+            status: 'checking',
             message: 'Checking status...',
           };
 
@@ -75,7 +67,6 @@
             return savedTimestamp || 'Never';
           });
 
-          // Function to perform the automatic website status check
           const checkWebsiteStatus = useCallback(async () => {
             console.log(`Attempting to check status for: ${TARGET_URL}`);
             setService(prev => ({
@@ -86,13 +77,8 @@
             setLastChecked(new Date().toLocaleString());
 
             try {
-              // Removed 'no-cors' mode to allow for proper error handling and status checks.
-              // NOTE: If this page is HTTPS and TARGET_URL is HTTP,
-              // the browser will block this request due to "Mixed Content" policy,
-              // leading to a TypeError in the catch block.
               const response = await fetch(TARGET_URL);
 
-              // Check if the response was successful (status 200-299)
               if (response.ok) {
                 setService(prev => ({
                   ...prev,
@@ -101,7 +87,6 @@
                 }));
                 console.log('Website check: Operational');
               } else {
-                // If response is not OK (e.g., 404, 500), report as major outage
                 setService(prev => ({
                   ...prev,
                   status: 'major_outage',
@@ -111,19 +96,16 @@
               }
 
             } catch (error) {
-              // This catch block will be hit for network errors, DNS issues,
-              // or critically, "Mixed Content" blocking if TARGET_URL is HTTP and this page is HTTPS.
               console.error('Website check failed:', error);
               setService(prev => ({
                 ...prev,
                 status: 'major_outage',
-                message: `Website is unreachable. This could be due to network issues, server being down, or browser security policies.`,
+                message: `Website is unreachable. This could be due to network issues, server being down, or an invalid HTTPS configuration.`,
               }));
               console.log('Website check: Major Outage (unreachable)');
             }
           }, [TARGET_URL]);
 
-          // Load service and timestamp from localStorage on initial render
           useEffect(() => {
             const savedService = localStorage.getItem('statusPageService');
             const savedTimestamp = localStorage.getItem('statusPageLastChecked');
@@ -134,23 +116,18 @@
               setLastChecked(savedTimestamp);
             }
 
-            // Initial check on load
             checkWebsiteStatus();
 
-            // Set up interval for periodic checks (e.g., every 5 minutes)
-            const intervalId = setInterval(checkWebsiteStatus, 5 * 60 * 1000); // 5 minutes
+            const intervalId = setInterval(checkWebsiteStatus, 5 * 60 * 1000);
 
-            // Clean up interval on component unmount
             return () => clearInterval(intervalId);
-          }, [checkWebsiteStatus]); // Re-run effect if checkWebsiteStatus changes
+          }, [checkWebsiteStatus]);
 
-          // Save service and timestamp to localStorage whenever service state changes
           useEffect(() => {
             localStorage.setItem('statusPageService', JSON.stringify(service));
             localStorage.setItem('statusPageLastChecked', lastChecked);
           }, [service, lastChecked]);
 
-          // Determine overall status (only one service here, so it's the service's status)
           const getOverallStatus = () => {
             switch (service.status) {
               case 'operational':
@@ -170,9 +147,8 @@
 
           const overallStatus = getOverallStatus();
 
-          // Get status icon and color based on status string (using inline SVGs)
           const getStatusIcon = (status) => {
-            const iconClass = "w-6 h-6"; // Tailwind classes for size
+            const iconClass = "w-6 h-6";
 
             switch (status) {
               case 'operational':
@@ -220,7 +196,7 @@
                     <line x1="12" y1="16" x2="12" y2="12"></line>
                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
                   </svg>
-                ); // Question mark circle
+                );
             }
           };
 
@@ -243,7 +219,6 @@
 
           return (
             <div className="min-h-screen bg-gray-100 font-inter antialiased flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8">
-              {/* Header */}
               <header className="w-full max-w-4xl bg-white shadow-lg rounded-xl p-6 mb-8 text-center">
                 <h1 className="text-4xl font-extrabold text-gray-900 mb-2">
                   System Status
@@ -253,12 +228,10 @@
                 </p>
               </header>
 
-              {/* Overall Status Indicator */}
               <div className={`w-full max-w-4xl ${overallStatus.color} text-white py-4 px-6 rounded-xl shadow-md mb-8 text-center`}>
                 <h2 className="text-2xl font-bold">{overallStatus.text}</h2>
               </div>
 
-              {/* Service Details */}
               <main className="w-full max-w-4xl bg-white shadow-lg rounded-xl p-6 mb-8">
                 <h3 className="text-2xl font-semibold text-gray-800 mb-6 border-b pb-4">
                   Service Component
@@ -279,7 +252,6 @@
                 </div>
               </main>
 
-              {/* Footer and Re-check Button */}
               <footer className="w-full max-w-4xl flex flex-col sm:flex-row justify-between items-center bg-white shadow-lg rounded-xl p-6">
                 <p className="text-gray-500 text-sm mb-4 sm:mb-0">
                   Last Checked: {lastChecked}
@@ -289,7 +261,6 @@
                         onClick={checkWebsiteStatus}
                         className="flex items-center px-6 py-3 bg-gray-600 text-white font-semibold rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 transition duration-300 ease-in-out"
                     >
-                        {/* Inline SVG for Refresh icon */}
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M21.5 2v6h-6M2.5 22v-6h6"></path>
                             <path d="M22 11.5A10 10 0 0 0 12 2C6.48 2 2 6.48 2 12a10 10 0 0 0 10 10c.78 0 1.54-.09 2.28-.27"></path>
