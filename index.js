@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { CheckCircle, AlertTriangle, XCircle, Settings, RefreshCw } from 'lucide-react';
+import { CheckCircle, AlertTriangle, XCircle, RefreshCw } from 'lucide-react';
 
 // Main App component
 const App = () => {
@@ -24,9 +24,6 @@ const App = () => {
     const savedTimestamp = localStorage.getItem('statusPageLastChecked');
     return savedTimestamp || 'Never';
   });
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingService, setEditingService] = useState({}); // For modal editing
 
   // Function to perform the automatic website status check
   const checkWebsiteStatus = useCallback(async () => {
@@ -115,29 +112,6 @@ const App = () => {
 
   const overallStatus = getOverallStatus();
 
-  // Function to open the configuration modal
-  const openModal = () => {
-    setEditingService({ ...service }); // Create a copy for editing
-    setIsModalOpen(true);
-  };
-
-  // Function to close the configuration modal
-  const closeModal = () => {
-    setIsModalOpen(false);
-  };
-
-  // Handle changes in the modal's input fields
-  const handleModalInputChange = (field, value) => {
-    setEditingService(prevService => ({ ...prevService, [field]: value }));
-  };
-
-  // Save changes from the modal (manual override)
-  const handleSaveConfig = () => {
-    setService(editingService);
-    setLastChecked(new Date().toLocaleString() + ' (Manually Updated)');
-    closeModal();
-  };
-
   // Get status icon and color based on status string
   const getStatusIcon = (status) => {
     switch (status) {
@@ -211,7 +185,7 @@ const App = () => {
         </div>
       </main>
 
-      {/* Footer and Configuration */}
+      {/* Footer and Re-check Button */}
       <footer className="w-full max-w-4xl flex flex-col sm:flex-row justify-between items-center bg-white shadow-lg rounded-xl p-6">
         <p className="text-gray-500 text-sm mb-4 sm:mb-0">
           Last Checked: {lastChecked}
@@ -224,79 +198,8 @@ const App = () => {
                 <RefreshCw className="w-5 h-5 mr-2" />
                 Re-check Now
             </button>
-            <button
-                onClick={openModal}
-                className="flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-300 ease-in-out"
-            >
-                <Settings className="w-5 h-5 mr-2" />
-                Manual Override
-            </button>
         </div>
       </footer>
-
-      {/* Disclaimer */}
-      <div className="w-full max-w-4xl text-center mt-8 p-4 bg-yellow-100 text-yellow-800 rounded-lg shadow-md">
-        <p className="font-medium">
-          <span className="font-bold">Important Note on Automatic Checking:</span> This page attempts to check if "{TARGET_URL}" is reachable. Due to browser security (CORS policy), it cannot reliably detect specific HTTP error codes like 404 or 500 from a different domain unless that domain explicitly allows it. For specific problem messages, use the "Manual Override" button.
-        </p>
-      </div>
-
-      {/* Configuration Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-3xl font-bold text-gray-900 mb-6 border-b pb-4">
-              Manually Override Status
-            </h3>
-            <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                <h4 className="text-xl font-semibold text-gray-800 mb-3">{editingService.name}</h4>
-                <div className="mb-3">
-                    <label htmlFor={`status-${editingService.id}`} className="block text-sm font-medium text-gray-700 mb-1">
-                        Status:
-                    </label>
-                    <select
-                        id={`status-${editingService.id}`}
-                        value={editingService.status}
-                        onChange={(e) => handleModalInputChange('status', e.target.value)}
-                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm"
-                    >
-                        <option value="operational">Operational</option>
-                        <option value="degraded">Degraded Performance</option>
-                        <option value="partial_outage">Partial Outage</option>
-                        <option value="major_outage">Major Outage</option>
-                    </select>
-                </div>
-                <div>
-                    <label htmlFor={`message-${editingService.id}`} className="block text-sm font-medium text-gray-700 mb-1">
-                        Message:
-                    </label>
-                    <textarea
-                        id={`message-${editingService.id}`}
-                        value={editingService.message}
-                        onChange={(e) => handleModalInputChange('message', e.target.value)}
-                        rows="3"
-                        className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        placeholder="e.g., 404 error, This site can't be reached, Investigating issue..."
-                    ></textarea>
-                </div>
-            </div>
-            <div className="mt-8 flex justify-end space-x-4">
-              <button
-                onClick={closeModal}
-                className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 transition duration-300 ease-in-out"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveConfig}
-                className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 transition duration-300 ease-in-out"
-              >
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
