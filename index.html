@@ -49,10 +49,11 @@
         // Main App component
         const App = () => {
           // Target URL for the status check.
-          // Note: Browser security (CORS) prevents reading specific HTTP status codes
-          // from cross-origin requests unless the target server explicitly allows it.
-          // We use HTTPS to avoid mixed content errors.
-          const TARGET_URL = 'https://crystaltierlist.kozow.com/';
+          // IMPORTANT: If your status page is hosted on HTTPS (like GitHub Pages),
+          // and the TARGET_URL is HTTP, the browser WILL BLOCK THE REQUEST
+          // due to "Mixed Content" security policy. This will result in a "Failed to fetch" error.
+          // The only way around this is for TARGET_URL to also be HTTPS, or to use a server-side proxy.
+          const TARGET_URL = 'http://crystaltierlist.kozow.com/';
           const SERVICE_ID = 'crystaltierlist-website';
           const SERVICE_NAME = 'Crystal Tierlist Website';
 
@@ -85,30 +86,28 @@
             setLastChecked(new Date().toLocaleString());
 
             try {
-              // Use 'no-cors' mode to bypass CORS restrictions for basic reachability check.
-              // In this mode, JavaScript cannot read the response's HTTP status code or body.
-              // We can only determine if a network connection was successfully established.
+              // Using 'no-cors' mode to attempt a basic reachability check.
+              // However, if the page is HTTPS and TARGET_URL is HTTP, the browser will still block it.
               const response = await fetch(TARGET_URL, { mode: 'no-cors' });
 
-              // If the fetch promise resolves (i.e., no network error occurred),
-              // we assume the site is reachable, even if we can't read the exact HTTP status.
+              // If fetch resolves, it means a network connection was attempted.
+              // We cannot read response.ok or response.status in 'no-cors' mode.
               setService(prev => ({
                 ...prev,
                 status: 'operational',
-                message: 'Website is reachable. (Cannot determine specific HTTP status due to browser security)',
+                message: 'Website appears reachable (basic connectivity check).',
               }));
               console.log('Website check: Operational (reachable, but status code not readable)');
 
             } catch (error) {
-              // This catch block handles actual network errors (e.g., DNS resolution failure,
-              // connection refused, or other fundamental fetch failures).
+              // This catch block handles actual network errors or browser security blocks (Mixed Content).
               console.error('Website check failed:', error);
               setService(prev => ({
                 ...prev,
                 status: 'major_outage',
-                message: `This site can't be reached or a network error occurred. (${error.message || 'Unknown error'})`,
+                message: `Could not connect to the website. This is likely due to browser security (Mixed Content blocking HTTPS page from HTTP site) or a network error.`,
               }));
-              console.log('Website check: Major Outage (unreachable)');
+              console.log('Website check: Major Outage (unreachable due to mixed content/network)');
             }
           }, [TARGET_URL]);
 
@@ -287,6 +286,25 @@
                     </button>
                 </div>
               </footer>
+
+              {/* Prominent Disclaimer for Mixed Content */}
+              <div className="w-full max-w-4xl text-center mt-8 p-4 bg-red-100 text-red-800 rounded-lg shadow-md border border-red-300">
+                <p className="font-bold text-lg mb-2">
+                  Important: Connectivity Limitations
+                </p>
+                <p className="text-base">
+                  This status page is hosted on a secure (HTTPS) domain (like GitHub Pages).
+                  It is attempting to check the status of <span className="font-bold">{TARGET_URL}</span>, which is an insecure (HTTP) domain.
+                </p>
+                <p className="text-base mt-2">
+                  Modern web browsers block HTTPS pages from making direct requests to HTTP resources ("Mixed Content" security policy).
+                  Therefore, this page <span className="font-bold">cannot reliably determine the exact status (like 404, 500)</span> of the target website.
+                  It can only report if a connection attempt was blocked by the browser or if a fundamental network error occurred.
+                </p>
+                <p className="text-base mt-2 font-semibold">
+                  To get accurate status, <span className="underline">the target website itself needs to support HTTPS</span>, or a server-side proxy is required.
+                </p>
+              </div>
             </div>
           );
         };
