@@ -48,7 +48,11 @@
 
         // Main App component
         const App = () => {
-          const TARGET_URL = 'http://crystaltierlist.kozow.com/';
+          // Target URL for the status check.
+          // Note: Browser security (CORS) prevents reading specific HTTP status codes
+          // from cross-origin requests unless the target server explicitly allows it.
+          // We use HTTPS to avoid mixed content errors.
+          const TARGET_URL = 'https://crystaltierlist.kozow.com/';
           const SERVICE_ID = 'crystaltierlist-website';
           const SERVICE_NAME = 'Crystal Tierlist Website';
 
@@ -81,25 +85,23 @@
             setLastChecked(new Date().toLocaleString());
 
             try {
-              // Use 'no-cors' mode to prevent browser from blocking the request entirely
-              // However, 'no-cors' means we cannot read the response status or body.
-              // We can only infer success/failure based on whether the fetch promise resolves or rejects.
+              // Use 'no-cors' mode to bypass CORS restrictions for basic reachability check.
+              // In this mode, JavaScript cannot read the response's HTTP status code or body.
+              // We can only determine if a network connection was successfully established.
               const response = await fetch(TARGET_URL, { mode: 'no-cors' });
 
-              // In 'no-cors' mode, response.ok will always be false and status will be 0.
-              // We primarily rely on the fetch promise resolving (no network error)
-              // to indicate that the site is reachable.
-              // If it reaches here, it means a network connection was established.
+              // If the fetch promise resolves (i.e., no network error occurred),
+              // we assume the site is reachable, even if we can't read the exact HTTP status.
               setService(prev => ({
                 ...prev,
                 status: 'operational',
-                message: 'Website is reachable.',
+                message: 'Website is reachable. (Cannot determine specific HTTP status due to browser security)',
               }));
-              console.log('Website check: Operational (reachable)');
+              console.log('Website check: Operational (reachable, but status code not readable)');
 
             } catch (error) {
-              // This catch block handles network errors (e.g., DNS error, connection refused)
-              // or other fundamental fetch failures.
+              // This catch block handles actual network errors (e.g., DNS resolution failure,
+              // connection refused, or other fundamental fetch failures).
               console.error('Website check failed:', error);
               setService(prev => ({
                 ...prev,
