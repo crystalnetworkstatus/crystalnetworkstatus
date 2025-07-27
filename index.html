@@ -53,7 +53,7 @@
           // and the TARGET_URL is HTTP, the browser WILL BLOCK THE REQUEST
           // due to "Mixed Content" security policy. This will result in a "Failed to fetch" error.
           // The only way around this is for TARGET_URL to also be HTTPS, or to use a server-side proxy.
-          const TARGET_URL = 'https://crystalnetwork.qzz.io/';
+          const TARGET_URL = 'http://crystaltierlist.kozow.com/';
           const SERVICE_ID = 'crystaltierlist-website';
           const SERVICE_NAME = 'Crystal Tierlist Website';
 
@@ -86,28 +86,40 @@
             setLastChecked(new Date().toLocaleString());
 
             try {
-              // Using 'no-cors' mode to attempt a basic reachability check.
-              // However, if the page is HTTPS and TARGET_URL is HTTP, the browser will still block it.
-              const response = await fetch(TARGET_URL, { mode: 'no-cors' });
+              // Removed 'no-cors' mode to allow for proper error handling and status checks.
+              // NOTE: If this page is HTTPS and TARGET_URL is HTTP,
+              // the browser will block this request due to "Mixed Content" policy,
+              // leading to a TypeError in the catch block.
+              const response = await fetch(TARGET_URL);
 
-              // If fetch resolves, it means a network connection was attempted.
-              // We cannot read response.ok or response.status in 'no-cors' mode.
-              setService(prev => ({
-                ...prev,
-                status: 'operational',
-                message: 'Website appears reachable (basic connectivity check).',
-              }));
-              console.log('Website check: Operational (reachable, but status code not readable)');
+              // Check if the response was successful (status 200-299)
+              if (response.ok) {
+                setService(prev => ({
+                  ...prev,
+                  status: 'operational',
+                  message: 'Website is operational.',
+                }));
+                console.log('Website check: Operational');
+              } else {
+                // If response is not OK (e.g., 404, 500), report as major outage
+                setService(prev => ({
+                  ...prev,
+                  status: 'major_outage',
+                  message: `Website is down or returned an error: Status ${response.status} ${response.statusText}.`,
+                }));
+                console.log(`Website check: Major Outage (Status ${response.status})`);
+              }
 
             } catch (error) {
-              // This catch block handles actual network errors or browser security blocks (Mixed Content).
+              // This catch block will be hit for network errors, DNS issues,
+              // or critically, "Mixed Content" blocking if TARGET_URL is HTTP and this page is HTTPS.
               console.error('Website check failed:', error);
               setService(prev => ({
                 ...prev,
                 status: 'major_outage',
-                message: `Could not connect to the website. This is likely due to browser security (Mixed Content blocking HTTPS page from HTTP site) or a network error.`,
+                message: `Website is unreachable. This could be due to network issues, server being down, or browser security policies.`,
               }));
-              console.log('Website check: Major Outage (unreachable due to mixed content/network)');
+              console.log('Website check: Major Outage (unreachable)');
             }
           }, [TARGET_URL]);
 
