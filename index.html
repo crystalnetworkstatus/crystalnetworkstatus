@@ -25,7 +25,7 @@
         }
         @keyframes spin {
             from { transform: rotate(0deg); }
-            to { transform: 360deg); }
+            to { transform: rotate(360deg); } /* Corrected '360deg' */
         }
         .animate-spin-custom {
             animation: spin 1s linear infinite;
@@ -41,10 +41,12 @@
         const App = () => {
           const API_STATUS_URL = 'https://crystalnetwork.qzz.io/status-check';
           const WEBSITE_DISPLAY_URL = 'https://crystalnetwork.qzz.io/';
+          const API_KEY = '8e0957260d127dfc3655e0692383164e91eafac9d6091210c686ff14b8f1983c'; // Provided API key
 
           const initialServices = [
             { id: 'website', name: 'CrystalNetwork Website', status: 'checking', message: 'Checking status...' },
             { id: 'discord-bot', name: 'Discord Bot', status: 'checking', message: 'Checking status...' },
+            { id: 'api-key-service', name: 'API Key Service', status: 'checking', message: 'Checking status...' }, // Added API Key Service
           ];
 
           const [services, setServices] = useState(() => {
@@ -68,7 +70,18 @@
             })));
 
             try {
-              const response = await fetch(API_STATUS_URL);
+              const response = await fetch(API_STATUS_URL, {
+                headers: {
+                  'X-API-Key': API_KEY // Include the API key in the header
+                }
+              });
+
+              if (!response.ok) {
+                // Handle non-200 responses, especially 401/403 for invalid API key
+                const errorData = await response.json().catch(() => ({ message: response.statusText }));
+                throw new Error(`API request failed with status ${response.status}: ${errorData.message}`);
+              }
+
               const data = await response.json();
 
               setServices(prevServices => prevServices.map(svc => {
@@ -86,10 +99,18 @@
                 } else if (svc.id === 'discord-bot') {
                   if (data.discordBotOnline) {
                     newStatus = 'operational';
-                    newMessage = 'NetWork Appeals bot is operational.';
+                    newMessage = 'Discord bot is operational.';
                   } else {
                     newStatus = 'major_outage';
                     newMessage = 'Discord bot is offline.';
+                  }
+                } else if (svc.id === 'api-key-service') { // Update for API Key Service
+                  if (data.apiKeyServiceOnline) {
+                    newStatus = 'operational';
+                    newMessage = 'API Key service is operational.';
+                  } else {
+                    newStatus = 'major_outage';
+                    newMessage = 'API Key service is offline.';
                   }
                 }
                 return { ...svc, status: newStatus, message: newMessage };
@@ -101,11 +122,11 @@
               setServices(prevServices => prevServices.map(svc => ({
                 ...svc,
                 status: 'major_outage',
-                message: `Service unreachable. This could be due to network issues, server being down, or a CORS policy blocking the request.`,
+                message: `Service unreachable or API Key invalid. Error: ${error.message}`,
               })));
-              console.log('All services check: Major Outage (API unreachable)');
+              console.log('All services check: Major Outage (API unreachable or invalid key)');
             }
-          }, [API_STATUS_URL]);
+          }, [API_STATUS_URL, API_KEY]); // Added API_KEY to dependency array
 
           useEffect(() => {
             const savedServices = localStorage.getItem('statusPageServices');
