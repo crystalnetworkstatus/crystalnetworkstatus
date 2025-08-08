@@ -3,300 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Status Page</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
-
+    <title>CrystalNetwork Status</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
-    <script>
-        window.React = React;
-        window.ReactDOM = ReactDOM;
-    </script>
-
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
+        ::-webkit-scrollbar {
+            width: 8px;
         }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); } /* Corrected '360deg' */
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
         }
-        .animate-spin-custom {
-            animation: spin 1s linear infinite;
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
     </style>
 </head>
-<body>
-    <div id="root"></div>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col items-center p-4">
 
-    <script type="text/babel">
-        const { useState, useEffect, useCallback } = React;
+    <header class="w-full max-w-xl mb-8 text-center">
+        <div class="flex items-center justify-center space-x-2 mb-2">
+            <h1 class="text-4xl font-extrabold text-slate-900 tracking-tight">System Status</h1>
+            <span id="overall-status-icon" class="text-3xl transition-transform duration-300"></span>
+        </div>
+        <p class="text-slate-500 text-lg">Real-time operational status for CrystalNetwork.</p>
+        <p class="text-sm text-slate-400 mt-1">Last updated: <span id="last-updated-time"></span></p>
+    </header>
 
-        const App = () => {
-          const API_STATUS_URL = 'https://crystalnetwork.qzz.io/status-check';
-          const WEBSITE_DISPLAY_URL = 'https://crystalnetwork.qzz.io/';
-          const API_KEY = '8e0957260d127dfc3655e0692383164e91eafac9d6091210c686ff14b8f1983c'; // Provided API key
+    <main id="status-container" class="w-full max-w-xl grid gap-6">
+    </main>
 
-          const initialServices = [
-            { id: 'website', name: 'CrystalNetwork Website', status: 'checking', message: 'Checking status...' },
-            { id: 'discord-bot', name: 'Discord Bot', status: 'checking', message: 'Checking status...' },
-            { id: 'api-key-service', name: 'API Key Service', status: 'checking', message: 'Checking status...' }, // Added API Key Service
-          ];
+    <footer class="mt-auto w-full max-w-xl text-center py-4 text-slate-400 text-sm">
+        <p>&copy; 2025 All Rights Reserved.</p>
+    </footer>
 
-          const [services, setServices] = useState(() => {
-            const savedServices = localStorage.getItem('statusPageServices');
-            return savedServices ? JSON.parse(savedServices) : initialServices;
-          });
-
-          const [lastChecked, setLastChecked] = useState(() => {
-            const savedTimestamp = localStorage.getItem('statusPageLastChecked');
-            return savedTimestamp || 'Never';
-          });
-
-          const checkAllServicesStatus = useCallback(async () => {
-            console.log(`Attempting to check all services status from: ${API_STATUS_URL}`);
-            setLastChecked(new Date().toLocaleString());
-
-            setServices(prevServices => prevServices.map(svc => ({
-              ...svc,
-              status: 'checking',
-              message: 'Checking status...',
-            })));
-
-            try {
-              const response = await fetch(API_STATUS_URL, {
-                headers: {
-                  'X-API-Key': API_KEY // Include the API key in the header
-                }
-              });
-
-              if (!response.ok) {
-                // Handle non-200 responses, especially 401/403 for invalid API key
-                const errorData = await response.json().catch(() => ({ message: response.statusText }));
-                throw new Error(`API request failed with status ${response.status}: ${errorData.message}`);
-              }
-
-              const data = await response.json();
-
-              setServices(prevServices => prevServices.map(svc => {
-                let newStatus = svc.status;
-                let newMessage = svc.message;
-
-                if (svc.id === 'website') {
-                  if (data.websiteOnline) {
-                    newStatus = 'operational';
-                    newMessage = 'Website is operational.';
-                  } else {
-                    newStatus = 'major_outage';
-                    newMessage = 'Website is down.';
-                  }
-                } else if (svc.id === 'discord-bot') {
-                  if (data.discordBotOnline) {
-                    newStatus = 'operational';
-                    newMessage = 'Discord bot is operational.';
-                  } else {
-                    newStatus = 'major_outage';
-                    newMessage = 'Discord bot is offline.';
-                  }
-                } else if (svc.id === 'api-key-service') { // Update for API Key Service
-                  if (data.apiKeyServiceOnline) {
-                    newStatus = 'operational';
-                    newMessage = 'API Key service is operational.';
-                  } else {
-                    newStatus = 'major_outage';
-                    newMessage = 'API Key service is offline.';
-                  }
-                }
-                return { ...svc, status: newStatus, message: newMessage };
-              }));
-              console.log('All services check completed.');
-
-            } catch (error) {
-              console.error('Failed to fetch service statuses:', error);
-              setServices(prevServices => prevServices.map(svc => ({
-                ...svc,
-                status: 'major_outage',
-                message: `Service unreachable or API Key invalid. Error: ${error.message}`,
-              })));
-              console.log('All services check: Major Outage (API unreachable or invalid key)');
+    <script>
+        const STATUS_URL = 'https://crystalnetwork.qzz.io/';
+        const FETCH_TIMEOUT = 10000;
+        const THRESHOLDS = {
+            operational: 1000,
+            degraded: 8000,
+        };
+        const services = [
+            { id: 'web-server', name: 'Web Server', status: 'loading', lastUpdated: null },
+            { id: 'discord-bot', name: 'Discord Bot', status: 'loading', lastUpdated: null },
+        ];
+        const statusConfig = {
+            'operational': {
+                bg: 'bg-green-100',
+                text: 'text-green-700',
+                border: 'border-green-400',
+                icon: '<i class="fas fa-check-circle text-green-500"></i>',
+                message: 'Operational'
+            },
+            'degraded': {
+                bg: 'bg-yellow-100',
+                text: 'text-yellow-700',
+                border: 'border-yellow-400',
+                icon: '<i class="fas fa-exclamation-triangle text-yellow-500"></i>',
+                message: 'Degraded Performance'
+            },
+            'outage': {
+                bg: 'bg-red-100',
+                text: 'text-red-700',
+                border: 'border-red-400',
+                icon: '<i class="fas fa-times-circle text-red-500"></i>',
+                message: 'Outage'
+            },
+            'loading': {
+                bg: 'bg-slate-100',
+                text: 'text-slate-500',
+                border: 'border-slate-300',
+                icon: '<i class="fas fa-spinner fa-spin text-slate-400"></i>',
+                message: 'Checking status...'
             }
-          }, [API_STATUS_URL, API_KEY]); // Added API_KEY to dependency array
-
-          useEffect(() => {
-            const savedServices = localStorage.getItem('statusPageServices');
-            const savedTimestamp = localStorage.getItem('statusPageLastChecked');
-            if (savedServices) {
-              setServices(JSON.parse(savedServices));
-            }
-            if (savedTimestamp) {
-              setLastChecked(savedTimestamp);
-            }
-
-            checkAllServicesStatus();
-
-            const intervalId = setInterval(checkAllServicesStatus, 10 * 1000);
-
-            return () => clearInterval(intervalId);
-          }, [checkAllServicesStatus]);
-
-          useEffect(() => {
-            localStorage.setItem('statusPageServices', JSON.stringify(services));
-            localStorage.setItem('statusPageLastChecked', lastChecked);
-          }, [services, lastChecked]);
-
-          const getOverallStatus = () => {
-            if (services.some(svc => svc.status === 'major_outage')) {
-              return { text: 'Major Outage', color: 'bg-red-500' };
-            }
-            if (services.some(svc => svc.status === 'partial_outage')) {
-              return { text: 'Partial Outage', color: 'bg-orange-500' };
-            }
-            if (services.some(svc => svc.status === 'degraded')) {
-              return { text: 'Degraded Performance', color: 'bg-yellow-500' };
-            }
-            if (services.every(svc => svc.status === 'operational')) {
-              return { text: 'All Systems Operational', color: 'bg-green-500' };
-            }
-            return { text: 'Checking Status...', color: 'bg-blue-500' };
-          };
-
-          const overallStatus = getOverallStatus();
-
-          const getStatusIcon = (status) => {
-            const iconClass = "w-6 h-6";
-
-            switch (status) {
-              case 'operational':
-                return (
-                  <svg xmlns="http://www.w3.org/2000/svg" className={`${iconClass} text-green-500`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                  </svg>
-                );
-              case 'degraded':
-                return (
-                  <svg xmlns="http://www.w3.org/2000/svg" className={`${iconClass} text-yellow-500`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                    <line x1="12" y1="9" x2="12" y2="13"></line>
-                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                  </svg>
-                );
-              case 'partial_outage':
-                return (
-                  <svg xmlns="http://www.w3.org/2000/svg" className={`${iconClass} text-orange-500`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="15" y1="9" x2="9" y2="15"></line>
-                    <line x1="9" y1="9" x2="15" y2="15"></line>
-                  </svg>
-                );
-              case 'major_outage':
-                return (
-                  <svg xmlns="http://www.w3.org/2000/svg" className={`${iconClass} text-red-500`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="15" y1="9" x2="9" y2="15"></line>
-                    <line x1="9" y1="9" x2="15" y2="15"></line>
-                  </svg>
-                );
-              case 'checking':
-                return (
-                  <svg xmlns="http://www.w3.org/2000/svg" className={`${iconClass} text-blue-500 animate-spin-custom`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21.5 2v6h-6M2.5 22v-6h6"></path>
-                    <path d="M22 11.5A10 10 0 0 0 12 2C6.48 2 2 6.48 2 12a10 10 0 0 0 10 10c.78 0 1.54-.09 2.28-.27"></path>
-                  </svg>
-                );
-              default:
-                return (
-                  <svg xmlns="http://www.w3.org/2000/svg" className={`${iconClass} text-gray-500`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                  </svg>
-                );
-            }
-          };
-
-          const getStatusColorClass = (status) => {
-            switch (status) {
-              case 'operational':
-                return 'text-green-600';
-              case 'degraded':
-                return 'text-yellow-600';
-              case 'partial_outage':
-                return 'text-orange-600';
-              case 'major_outage':
-                return 'text-red-600';
-              case 'checking':
-                return 'text-blue-600';
-              default:
-                return 'text-gray-600';
-            }
-          };
-
-          return (
-            <div className="min-h-screen bg-gray-100 font-inter antialiased flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8">
-              <header className="w-full max-w-4xl bg-white shadow-lg rounded-xl p-6 mb-8 text-center">
-                <h1 className="text-4xl font-extrabold text-gray-900 mb-2">
-                  System Status
-                </h1>
-                <p className="text-gray-600 text-lg">
-                  Status of services for <a href={WEBSITE_DISPLAY_URL} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{WEBSITE_DISPLAY_URL}</a>
-                </p>
-              </header>
-
-              <div className={`w-full max-w-4xl ${overallStatus.color} text-white py-4 px-6 rounded-xl shadow-md mb-8 text-center`}>
-                <h2 className="text-2xl font-bold">{overallStatus.text}</h2>
-              </div>
-
-              <main className="w-full max-w-4xl bg-white shadow-lg rounded-xl p-6 mb-8">
-                <h3 className="text-2xl font-semibold text-gray-800 mb-6 border-b pb-4">
-                  Service Components
-                </h3>
-                <div className="space-y-6">
-                  {services.map(service => (
-                    <div key={service.id} className="flex items-start p-4 rounded-lg bg-gray-50 border border-gray-200">
-                      <div className="flex-shrink-0 mt-1 mr-4">
-                        {getStatusIcon(service.status)}
-                      </div>
-                      <div className="flex-grow">
-                        <h4 className="text-xl font-semibold text-gray-900 mb-1">{service.name}</h4>
-                        <p className={`text-lg font-medium ${getStatusColorClass(service.status)} mb-2`}>
-                          {service.status.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}
-                        </p>
-                        <p className="text-gray-700 text-base">{service.message}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </main>
-
-              <footer className="w-full max-w-4xl flex flex-col sm:flex-row justify-between items-center bg-white shadow-lg rounded-xl p-6">
-                <p className="text-gray-500 text-sm mb-4 sm:mb-0">
-                  Last Checked: {lastChecked}
-                </p>
-                <div className="flex space-x-4">
-                    <button
-                        onClick={checkAllServicesStatus}
-                        className="flex items-center px-6 py-3 bg-gray-600 text-white font-semibold rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 transition duration-300 ease-in-out"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21.5 2v6h-6M2.5 22v-6h6"></path>
-                            <path d="M22 11.5A10 10 0 0 0 12 2C6.48 2 2 6.48 2 12a10 10 0 0 0 10 10c.78 0 1.54-.09 2.28-.27"></path>
-                        </svg>
-                        Re-check Now
-                    </button>
-                </div>
-              </footer>
-            </div>
-          );
         };
 
-        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+        const statusContainer = document.getElementById('status-container');
+        const overallStatusIcon = document.getElementById('overall-status-icon');
+        const lastUpdatedTime = document.getElementById('last-updated-time');
+
+        const createServiceCard = (service) => {
+            const config = statusConfig[service.status];
+            const card = document.createElement('div');
+            card.className = `p-6 ${config.bg} rounded-xl border-l-4 ${config.border} shadow-lg transition-transform hover:scale-105 transform duration-300 ease-in-out`;
+            card.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-slate-900">${service.name}</h3>
+                    <div class="text-2xl">${config.icon}</div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="font-bold ${config.text} text-lg">${config.message}</span>
+                </div>
+            `;
+            return card;
+        };
+
+        const fetchServiceStatus = async () => {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+            const startTime = performance.now();
+            
+            try {
+                const response = await fetch(STATUS_URL, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
+                const endTime = performance.now();
+                const latency = endTime - startTime;
+
+                if (!response.ok) {
+                    return 'outage';
+                }
+
+                if (latency < THRESHOLDS.operational) {
+                    return 'operational';
+                } else if (latency < THRESHOLDS.degraded) {
+                    return 'degraded';
+                } else {
+                    return 'outage';
+                }
+
+            } catch (error) {
+                clearTimeout(timeoutId);
+                console.error('Failed to fetch status:', error);
+                return 'outage';
+            }
+        };
+
+        const renderStatusPage = () => {
+            statusContainer.innerHTML = '';
+            
+            services.forEach(service => {
+                statusContainer.appendChild(createServiceCard(service));
+            });
+
+            updateOverallStatus();
+
+            lastUpdatedTime.textContent = new Date().toLocaleTimeString();
+        };
+
+        const updateOverallStatus = () => {
+            let overallStatus = 'operational';
+            if (services.some(s => s.status === 'outage')) {
+                overallStatus = 'outage';
+            } else if (services.some(s => s.status === 'degraded')) {
+                overallStatus = 'degraded';
+            } else if (services.some(s => s.status === 'loading')) {
+                overallStatus = 'loading';
+            }
+
+            const config = statusConfig[overallStatus];
+            overallStatusIcon.innerHTML = config.icon;
+            
+            overallStatusIcon.classList.remove('animate-pulse');
+            if (overallStatus === 'degraded' || overallStatus === 'outage') {
+                overallStatusIcon.classList.add('animate-pulse');
+            }
+        };
+
+        const updateAllServices = async () => {
+            services.forEach(s => s.status = 'loading');
+            renderStatusPage();
+            
+            const newStatus = await fetchServiceStatus();
+            
+            services.forEach(s => s.status = newStatus);
+            
+            renderStatusPage();
+        };
+
+        updateAllServices();
+
+        setInterval(updateAllServices, 30000);
     </script>
 </body>
 </html>
