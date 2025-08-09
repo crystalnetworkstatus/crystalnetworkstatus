@@ -36,7 +36,7 @@
             <h1 class="text-4xl font-extrabold text-slate-900 tracking-tight">System Status</h1>
             <span id="overall-status-icon" class="text-3xl transition-transform duration-300"></span>
         </div>
-        <p class="text-slate-500 text-lg">Real-time operational status for CrystalNetwork.</p>
+        <p class="text-slate-500 text-lg">Real-time operational status for all services.</p>
         <p class="text-sm text-slate-400 mt-1">Last updated: <span id="last-updated-time"></span></p>
     </header>
 
@@ -55,8 +55,8 @@
             degraded: 8000,
         };
         const services = [
-            { id: 'web-server', name: 'Web Server', status: 'loading', lastUpdated: null },
-            { id: 'discord-bot', name: 'Discord Bot', status: 'loading', lastUpdated: null },
+            { id: 'web-server', name: 'Web Server', status: 'loading', details: 'The web server is responsible for hosting the main website. It processes all incoming requests and shows the requested data.' },
+            { id: 'discord-bot', name: 'Discord Bot', status: 'loading', details: 'The Discord bot is responsible for sending your appeals to the staff team for appeal.' },
         ];
         const statusConfig = {
             'operational': {
@@ -96,14 +96,21 @@
         const createServiceCard = (service) => {
             const config = statusConfig[service.status];
             const card = document.createElement('div');
-            card.className = `p-6 ${config.bg} rounded-xl border-l-4 ${config.border} shadow-lg transition-transform hover:scale-105 transform duration-300 ease-in-out`;
+            card.className = `p-6 ${config.bg} rounded-xl border-l-4 ${config.border} shadow-lg transition-transform hover:scale-105 transform duration-300 ease-in-out cursor-pointer`;
+            card.setAttribute('data-service-id', service.id);
             card.innerHTML = `
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-xl font-semibold text-slate-900">${service.name}</h3>
+                    <div class="flex items-center space-x-2">
+                        <h3 class="text-xl font-semibold text-slate-900">${service.name}</h3>
+                        <i class="fas fa-chevron-down text-slate-400 text-sm transition-transform duration-300 service-arrow"></i>
+                    </div>
                     <div class="text-2xl">${config.icon}</div>
                 </div>
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-2 mb-2">
                     <span class="font-bold ${config.text} text-lg">${config.message}</span>
+                </div>
+                <div class="hidden pt-4 mt-4 border-t border-slate-300 text-slate-600 service-details">
+                    <p>${service.details}</p>
                 </div>
             `;
             return card;
@@ -148,7 +155,6 @@
             });
 
             updateOverallStatus();
-
             lastUpdatedTime.textContent = new Date().toLocaleTimeString();
         };
 
@@ -182,8 +188,17 @@
             renderStatusPage();
         };
 
-        updateAllServices();
+        statusContainer.addEventListener('click', (event) => {
+            let targetCard = event.target.closest('[data-service-id]');
+            if (targetCard) {
+                const details = targetCard.querySelector('.service-details');
+                const arrow = targetCard.querySelector('.service-arrow');
+                details.classList.toggle('hidden');
+                arrow.classList.toggle('rotate-180');
+            }
+        });
 
+        updateAllServices();
         setInterval(updateAllServices, 30000);
     </script>
 </body>
